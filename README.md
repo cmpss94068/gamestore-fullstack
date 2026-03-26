@@ -11,3 +11,9 @@
 1. **資料自動化整合**：統一不同平台的日期與價格格式，自動匯入資料庫。
 2. **安全性實作**：使用 `.env` 管理敏感資訊，並實作 JWT Token 驗證機制。
 3. **系統擴展性**：後端預留了購物車與訂單模組的擴充空間。
+
+## 📸 專案截圖
+
+### 🔍 搜尋與篩選功能 (Search & Multi-filter)
+透過整合 **Django Filter** 與前端 React 狀態管理，使用者可以快速從數千筆爬蟲資料中精確定位遊戲。
+![Search Feature](./screenshots/01_search_and_filter.png)
