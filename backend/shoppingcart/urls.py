@@ -10,5 +10,5 @@ router.register('order', viewset=orderView, basename='order')
 urlpatterns = [
     path('', include((router.urls, app_name), namespace='shoppingcart')),
     path('order/<pk>/', orderView.as_view({'delete': 'destroy'}), name='order-delete'),
-    path('order_count/', orderView.as_view({'get': 'get_order_count'}), name='order_count')
+    path('order_count/', orderView.as_view({'get': 'cart_count'}), name='order_count')
 ]
