@@ -1,4 +1,4 @@
-from rest_framework import viewsets, pagination
+from rest_framework import viewsets, pagination, status
 from .serializers import profilePostSerializer, platformSerializer, categorySerializer
 from .models import profile, platform, category
 from rest_framework.response import Response
@@ -75,9 +75,61 @@ class profilePostView(viewsets.ModelViewSet):
         post_obj.category.add(*new_cate)
         post_obj.platform.add(*new_plat)
 
-        serializer = self.serializer_class(post_obj, data=request.data, context={'request': request})
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        else:
-            return Response(serializer.errors)
+        # 創建序列化器實例來序列化數據（不保存，因為已經創建了）
+        serializer = self.serializer_class(post_obj)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        partial = kwargs.get('partial', False)
+        
+        # 處理平台和分類的字串
+        new_cate = []
+        new_plat = []
+        
+        if 'category' in request.data:
+            for category_name in request.data['category'].split(','):
+                try:
+                    cate = category.objects.get(name=category_name.strip())
+                    new_cate.append(cate)
+                except category.DoesNotExist:
+                    cate = category.objects.create(name=category_name.strip())
+                    new_cate.append(cate)
+        
+        if 'platform' in request.data:
+            for platform_name in request.data['platform'].split(','):
+                try:
+                    plat = platform.objects.get(name=platform_name.strip())
+                    new_plat.append(plat)
+                except platform.DoesNotExist:
+                    plat = platform.objects.create(name=platform_name.strip())
+                    new_plat.append(plat)
+        
+        # Update the instance fields
+        if not partial or 'game_name' in request.data:
+            instance.game_name = request.data.get('game_name', instance.game_name)
+        if not partial or 'game_img' in request.data:
+            instance.game_img = request.data.get('game_img', instance.game_img)
+        if not partial or 'game_url' in request.data:
+            instance.game_url = request.data.get('game_url', instance.game_url)
+        if not partial or 'game_rating' in request.data:
+            instance.game_rating = request.data.get('game_rating', instance.game_rating)
+        if not partial or 'game_price' in request.data:
+            instance.game_price = request.data.get('game_price', instance.game_price)
+        if not partial or 'game_date' in request.data:
+            instance.game_date = request.data.get('game_date', instance.game_date)
+        if not partial or 'game_publisher' in request.data:
+            instance.game_publisher = request.data.get('game_publisher', instance.game_publisher)
+        
+        instance.save()
+        
+        # Update many-to-many relationships
+        if new_cate:
+            instance.category.clear()
+            instance.category.add(*new_cate)
+        if new_plat:
+            instance.platform.clear()
+            instance.platform.add(*new_plat)
+        
+        serializer = self.serializer_class(instance)
+        return Response(serializer.data, status=status.HTTP_200_OK)
