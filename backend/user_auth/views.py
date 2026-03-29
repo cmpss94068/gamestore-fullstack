@@ -1,5 +1,5 @@
 from django.contrib.auth.models import User
-from rest_framework import viewsets, serializers
+from rest_framework import viewsets, serializers, status
 from .serializers import RegisterationSerializer
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -10,23 +10,12 @@ class RegisterationView(viewsets.ModelViewSet):
     serializer_class = RegisterationSerializer
     permission_classes = (AllowAny,)
 
-    def validate(self, attrs):
-        if attrs['password'] != attrs['password2']:
-            raise serializers.ValidationError(
-                {"password": "Password fields didn't match"})
-
-        password = attrs['password']
-        if not any(char.isupper() for char in password) or \
-           not any(char.islower() for char in password) or \
-           not any(char.isdigit() for char in password):
-            raise serializers.ValidationError(
-                {"password": "不符格密碼規格，請包含大小寫英文與數字"})
-        return attrs
-
     def create(self, request, *args, **kwargs):
-        validated_data = self.validate(request.data)
-        user = User.objects.create_user(
-            username=validated_data['username'],
-            password=validated_data['password']
-        )
-        return Response({'message': 'User created successfully'}, status=201)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def perform_create(self, serializer):
+        serializer.save()
